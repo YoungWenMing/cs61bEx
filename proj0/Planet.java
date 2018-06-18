@@ -82,4 +82,20 @@ public class Planet{
 		}
 		return result;
 	}
+
+	public void update(double dt, double fx, double fy){
+		/*
+		update the planet's position with the forces along 
+		X axis and Y axis on the interval dt
+		*/
+		double ax = fx / this.mass;
+		double ay = fy / this.mass;
+		this.xxVel += ax * dt;
+		this.yyVel += ay * dt;
+		this.xxPos += this.xxVel * dt;
+		this.yyPos += this.yyVel * dt;
+
+	}
+
+
 }

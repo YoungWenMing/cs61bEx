@@ -98,4 +98,12 @@ public class Planet{
 	}
 
 
+	public void draw(double radius, double size){
+		//draw this planet's image on the paints
+		double xP = this.xxPos / radius * size;
+		double yP = this.yyPos / radius * size;
+		StdDraw.picture(xP, yP, this.imgFileName);
+		
+	}
+
 }

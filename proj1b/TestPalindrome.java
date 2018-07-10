@@ -24,5 +24,8 @@ public class TestPalindrome {
         assertEquals(palindrome.isPalindrome(word), false);
         assertEquals(palindrome.isPalindrome(word0), true);
         assertTrue(palindrome.isPalindrome(word1));
+
+        OffByOne obo = new OffByOne();
+        assertTrue(palindrome.isPalindrome("acb", obo));
     }
 }

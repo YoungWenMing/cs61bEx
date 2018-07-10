@@ -28,4 +28,16 @@ public class Palindrome {
         return isPalindromeHelper(deque);
     }
 
+    /*overload the isPalindrome method */
+    public boolean isPalindrome(String word, CharacterComparator cc){
+        Deque<Character> deque = wordToDeque(word);
+        while(deque.size() != 0 && deque.size() != 1){
+            Character first = deque.removeFirst();
+            Character last = deque.removeLast();
+            if(!cc.equalChars(first, last))
+                return false;
+        }
+        return true;
+    }
+
 }

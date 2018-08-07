@@ -19,8 +19,8 @@ public class Game {
 
 
     //self-added
-    private static  long SEED;// = 3010;
-    private static  Random RANDOM;// = new Random(SEED);
+    private  long SEED;// = 3010;
+    private  Random RANDOM;// = new Random(SEED);
     //private static final RandomUtils randomTool = new RandomUtils();
     //
 
@@ -46,21 +46,24 @@ public class Game {
         // TODO: Fill out this method to run the game using the input passed in,
         // and return a 2D tile representation of the world that would have been
         // drawn if the same inputs had been given to playWithKeyboard().
-        int len = input.length();
-        boolean indicates = input.charAt(0) == 'N' || input.charAt(0) == 'n';
-        indicates = indicates && (input.charAt(len - 1) == 's' || input.charAt(len - 1) == 'S');
+
+        boolean indicates = isInputLegal(input);
         if(!indicates){
             System.out.println("please input legal order starts with N and ends with S ");
             System.exit(-1);
         }
-        int x = extractNum(input);
-        SEED = x;
+        SEED = extractNum(input);
+        RANDOM = new Random(SEED);
 
-        TETile[][] finalWorldFrame = null;
+        TETile[][] finalWorldFrame = emptyWorld(HEIGHT, WIDTH);
+        spaceGrow();
+        finalWorldFrame = drawWall(finalWorldFrame);
+        finalWorldFrame = drawDoor(finalWorldFrame);
+        finalWorldFrame = drawRoute(finalWorldFrame);
         return finalWorldFrame;
     }
 
-    public TETile[][] drawRoute(TERenderer ter, TETile[][] world){
+    public TETile[][] drawRoute(TETile[][] world){
 
         for(int[] x: innerPoints){
             world[x[0]][x[1]] = Tileset.GRASS;
@@ -115,6 +118,16 @@ public class Game {
         innerPoints[0] = Pos;
     }
 
+    /*
+    check whether the input start with character n and end with s
+     */
+    private boolean isInputLegal(String input){
+        int len = input.length();
+        boolean indicates = input.charAt(0) == 'N' || input.charAt(0) == 'n';
+        indicates = indicates && (input.charAt(len - 1) == 's' || input.charAt(len - 1) == 'S');
+        return indicates;
+    }
+
     /*check whether the point is on the border */
     public boolean isValid(int[] pos, int height, int width){
         boolean sample1 = pos[0] < width - 1 && pos[1] < height - 1;
@@ -164,7 +177,7 @@ public class Game {
     */
 
     //choose a number range from 1 to 4 which presents one specific direction
-    public static int choseDirection(int n){
+    public int choseDirection(int n){
         int num = RANDOM.nextInt(n);
         return num;
     }
@@ -281,20 +294,27 @@ public class Game {
         }
     }
 
-    public static void main(String[] args){
-        /*
-        TERenderer ter = new TERenderer();
-        ter.initialize(WIDTH, HEIGHT);
-
-        // initialize tiles
+    /*
+    return an array of empty TETile set
+     */
+    TETile[][] emptyWorld(int height, int width){
         TETile[][] world = new TETile[WIDTH][HEIGHT];
-
 
         for (int x = 0; x < WIDTH; x += 1) {
             for (int y = 0; y < HEIGHT; y += 1) {
                 world[x][y] = Tileset.NOTHING;
             }
         }
+        return world;
+    }
+
+    public static void main(String[] args){
+        /*
+        TERenderer ter = new TERenderer();
+        ter.initialize(WIDTH, HEIGHT);
+
+        // initialize tiles
+
 
         Game gameTest = new Game();
         gameTest.spaceGrow();

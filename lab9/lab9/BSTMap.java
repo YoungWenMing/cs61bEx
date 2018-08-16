@@ -152,58 +152,16 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
     @Override
     public V remove(K key) {
 
-
+        V removeV = null;
         Node toRemove = getHelper(key, root);
-        V removeV = toRemove.value;
 
-        Node successor = extractSuccessor(toRemove);
-        if(successor == null)
-            if(toRemove == root)    root = null;
-        replace(toRemove, successor);
-
-        /*
-        Node toRemoveP = getParent(toRemove);
-
-        if(toRemove.left == null && toRemove.right == null){
-            if(toRemove == root)
-                root = null;
-            else if(toRemoveP.left == toRemove)
-                toRemoveP.left = null;
-            else
-                toRemoveP.right = null;
-        }else if(toRemove == root){
-            Node successor = getClosestNodeLeft(toRemove);
-            if (successor == null) {
-                successor = getClosestNodeRight(toRemove);
-                getParent(successor).left = successor.right;
-            }else {
-                getParent(successor).right = successor.left;
-            }
-
-            successor.left = toRemove.left;
-            successor.right = toRemove.right;
-            root = successor;
-        }else {
-            Node successor = getClosestNodeLeft(toRemove);
-            if (successor == null) {
-                successor = getClosestNodeRight(toRemove);
-                getParent(successor).left = successor.right;
-            }else {
-                getParent(successor).right = successor.left;
-            }
-
-            successor.right = toRemove.right;
-            successor.left = toRemove.left;
-
-            if(toRemoveP.left == toRemove)
-                toRemoveP.left = successor;
-            else
-                toRemoveP.right = successor;
-
+        if(toRemove != null) {
+            removeV = toRemove.value;
+            Node successor = extractSuccessor(toRemove);
+            if (successor == null)
+                if (toRemove == root) root = null;
+            replace(toRemove, successor);
         }
-
-        */
-
         return removeV;
     }
 
@@ -213,17 +171,22 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
     taking over its children.
      */
     private void replace(Node prev, Node successor){
+
+        if(successor != null) {
+            successor.left = prev.left;
+            successor.right = prev.right;
+        }
+
         Node prevParent = getParent(prev);
         if(prevParent != null){
             if(prevParent.right == prev)
                 prevParent.right = successor;
             else
                 prevParent.left = successor;
+        }else {
+            root = successor;
         }
-        if(successor != null) {
-            successor.left = prev.left;
-            successor.right = prev.right;
-        }
+
     }
 
     /*
@@ -235,16 +198,26 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
         Node left = getClosestNodeLeft(toRemove);
         Node right = getClosestNodeRight(toRemove);
 
-        if(left == null && right ==  null)
-            return null;
-        else if(left == null){
-            getParent(right).left = right.right;
-            return right;
-        }else {
-            getParent(left).right = left.left;
-            return left;
-        }
+        Node result = null;
 
+        if(left == null && right ==  null)
+            ;
+        else if(right != null){                 //two cases:1 node being taken away is at its parent's right side, namely it has no left child
+            Node parent = getParent(right);     //          2 at its parent's left side, it also has no left child
+            if(parent.right == right)           //all need to be done is to replace the node with its right children(if has any)
+                parent.right = right.right;
+            else
+                parent.left = right.right;
+            result = right;
+        }else if(left != null) {
+            Node parent = getParent(left);
+            if(parent.left == left)
+                parent.left = left.left;
+            else
+                parent.right = left.left;
+            result = left;
+        }
+        return result;
     }
 
     private Node getClosestNodeLeft(Node n){
@@ -301,4 +274,17 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
     public Iterator<K> iterator() {
         throw new UnsupportedOperationException();
     }
+
+    public void printTree(){
+        printTreeHelper("", root);
+    }
+
+    private void printTreeHelper(String indent, Node tree){
+        if(tree != null){
+            System.out.println(indent + tree.key);
+            printTreeHelper(indent + "   ", tree.left);
+            printTreeHelper(indent + "   ", tree.right);
+        }
+    }
+
 }

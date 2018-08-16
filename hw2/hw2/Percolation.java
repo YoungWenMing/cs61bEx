@@ -15,6 +15,7 @@ public class Percolation {
         base = new WeightedQuickUnionUF(N * N);
         gridScale = N;
         sitesStatus = new int[N * N];
+        openSites = 0;
     }
 
     /*
@@ -24,33 +25,39 @@ public class Percolation {
      */
     public void open(int row, int col)       // open the site (row, col) if it is not open already
     {
+        if(!checkValidation(row, col)) throw new IllegalArgumentException();
+        if(isOpen(row, col)){
+            //System.out.println("[ " +row + " " + col + "]" + "is already opened.");
+            return;
+        }
         sitesStatus[posTransformation(row, col)] = 1;
         openSites += 1;
-
+        unionOpenedNeighbors(row, col);
     }
 
     /*
     union the site with its neighbors
      */
-    public void unionNeighbors(int row, int col){
-        int b1, b2;
-        if(row % gridScale == 0) b1 = 0;
-        else                     b1 = 2;
+    private void unionOpenedNeighbors(int row, int col){
+        int nthrow, nthcol;
+        int pos = posTransformation(row, col);
 
-        if(row % gridScale == 0) b2 = 0;
-        else                     b2 = 2;
+        for(int i = -1 ; i < 2; i += 2){
+            nthrow = row + i;
+            nthcol = col + i;
+            if(checkValidation(nthrow, col) && isOpen(nthrow, col))          //if the neighbor site is valid and opened
+                base.union(posTransformation(nthrow, col), pos);
 
-        for(int i = -1; i < b1;i += 2){
-            for(int j = -1;j < b2; b2 += 2 ){
-
-            }
+            if(checkValidation(row, nthcol) && isOpen(row, nthcol))
+                base.union(posTransformation(row, nthcol), pos);
         }
+
     }
 
     public boolean isOpen(int row, int col)  // is the site (row, col) open?
     {
         int pos = posTransformation(row, col);
-        return pos == 1;
+        return sitesStatus[pos] == 1;
     }
 
     /*
@@ -58,11 +65,13 @@ public class Percolation {
      */
     public boolean isFull(int row, int col)  // is the site (row, col) full?
     {
+        if(!isOpen(row, col)) return false;
+
         int pos = posTransformation(row, col);
         for(int i = 0; i < gridScale; i += 1){
             int p = posTransformation(0, i);
-            boolean x = isOpen(0, i)  &&  base.connected(p, pos);
-            if(x) return true;
+            if( isOpen(0, i))
+                if(base.connected(p, pos)) return true;
         }
         return false;
     }
@@ -70,11 +79,17 @@ public class Percolation {
 
     public int numberOfOpenSites()           // number of open sites
     {
-        return 0;
+        return openSites;
     }
 
     public boolean percolates()              // does the system percolate?
     {
+        for(int i =0;i < gridScale; i += 1) {
+            if (isFull(gridScale - 1, i)){
+                //System.out.print("it percolates.");
+                return true;
+            }
+        }
         return false;
     }
 
@@ -83,20 +98,16 @@ public class Percolation {
 
     }
 
-    private boolean checkValidation(int n){
-        boolean b = n < gridScale && n >= 0;
-        if(! b) throw new IllegalArgumentException("the number of either row or column must between 0 and " + gridScale);
-        return b;
+    private boolean checkValidation(int row, int col){
+        //if(! b) throw new IllegalArgumentException("the number of either row or column must between 0 and " + gridScale);
+        return row < gridScale && row >= 0 && col < gridScale && col >= 0;
     }
 
     /*
     return the actual position in the disjoint set based on
     the row number and the column
      */
-    public int posTransformation(int row, int col){
-        checkValidation(row);
-        checkValidation(col);
-
+    private int posTransformation(int row, int col){
         return row * gridScale + col;
     }
 }

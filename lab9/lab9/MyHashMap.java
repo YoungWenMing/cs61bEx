@@ -1,7 +1,11 @@
 package lab9;
 
+import java.awt.*;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+
+import static org.junit.Assert.*;
 
 /**
  *  A hash table-backed Map implementation. Provides amortized constant time
@@ -53,19 +57,75 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
      */
     @Override
     public V get(K key) {
-        throw new UnsupportedOperationException();
+        int hashcode = hash(key);
+        return buckets[hashcode].get(key);
     }
-
     /* Associates the specified value with the specified key in this map. */
     @Override
     public void put(K key, V value) {
-        throw new UnsupportedOperationException();
+        this.size = size() + 1;
+        if(loadFactor()  > MAX_LF){
+            resize();
+            this.size = size() + 1;
+        }
+        int hashcode = hash(key);
+        buckets[hashcode].put(key, value);
     }
+
+    private void resize(){
+        ArrayMap<K, V>[] original = buckets;        //reserve the original buckets
+        this.size = 0;
+        buckets = new ArrayMap[2 * original.length];
+
+        //initialize the new buckets
+        for(int i =0; i < buckets.length; i += 1)
+            buckets[i] = new ArrayMap<>();
+
+        for(ArrayMap x : original){
+            Iterator<K> iter = x.iterator();
+            while(iter.hasNext()) {
+                K temp = iter.next();
+                put(temp, (V) x.get(temp));
+            }
+        }
+    }
+
+
 
     /* Returns the number of key-value mappings in this map. */
     @Override
     public int size() {
-        throw new UnsupportedOperationException();
+        return this.size;
+    }
+
+    public static void main(String[] args){
+        MyHashMap<Integer, String> aMap = new MyHashMap<>();
+        aMap.put(12 , "Young");
+        aMap.put(98, "Wen");
+        String str = "Hello";
+        try {
+            for (int i = 0; i < 16; i += 1) {
+                aMap.put(i + 112, "h" + str);
+                str = str + "h";
+            }
+        }catch (Exception e){
+            System.out.println(e);
+        }
+
+        //assertEquals(aMap.get(12), "Young");
+        //assertEquals(aMap.size(), 2);
+        assertEquals(aMap.get(112), "hHello");
+        Iterator<Integer> keyIter = aMap.iterator();
+        for(Integer x : aMap.keySet())
+            assertEquals(x, keyIter.next());
+        System.out.println(aMap.get(200));
+
+        aMap.remove(130);
+
+        aMap.remove(12, "Young");
+        System.out.println(aMap.get(12));
+        //assertEquals(aMap.get(12), "Young");
+
     }
 
     //////////////// EVERYTHING BELOW THIS LINE IS OPTIONAL ////////////////
@@ -73,7 +133,13 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     /* Returns a Set view of the keys contained in this map. */
     @Override
     public Set<K> keySet() {
-        throw new UnsupportedOperationException();
+        HashSet<K> result = new HashSet<>();
+        for(ArrayMap x : buckets){
+            Iterator<K> iter = x.iterator();
+            while(iter.hasNext())
+                result.add(iter.next());
+        }
+        return result;
     }
 
     /* Removes the mapping for the specified key from this map if exists.
@@ -81,7 +147,10 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
      * UnsupportedOperationException. */
     @Override
     public V remove(K key) {
-        throw new UnsupportedOperationException();
+        V returnV = get(key);
+        int hashNum = hash(key);
+        buckets[hashNum].remove(key);
+        return returnV;
     }
 
     /* Removes the entry for the specified key only if it is currently mapped to
@@ -89,11 +158,13 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
      * throw an UnsupportedOperationException.*/
     @Override
     public V remove(K key, V value) {
-        throw new UnsupportedOperationException();
+        if(get(key) == value)
+            return remove(key);
+        return null;
     }
 
     @Override
     public Iterator<K> iterator() {
-        throw new UnsupportedOperationException();
+        return keySet().iterator();
     }
 }

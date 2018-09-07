@@ -13,8 +13,8 @@ import static java.lang.Math.floor;
  */
 public class Rasterer {
 
-    private double[] LonDPPS = new double[8];
-    private double ratioDisplay = 4.0 / 3.0;
+
+    private int MAXDEPTH = 7;
 
     private static final int PIXEL = MapServer.TILE_SIZE;
     public static final double ROOT_ULLAT = MapServer.ROOT_ULLAT, ROOT_ULLON = MapServer.ROOT_ULLON,
@@ -22,7 +22,7 @@ public class Rasterer {
 
     public Rasterer() {
         // YOUR CODE HERE
-        initLonDPPS();
+
     }
 
     /**
@@ -61,11 +61,13 @@ public class Rasterer {
                 ullat = params.get("ullat"), lrlat = params.get("lrlat"),
                 width = params.get("w"), height = params.get("h");
 
-        double LonDPP = getLonDPPS(lrlon, ullon, width);
-        int depth = getDepth(LonDPP);
+        double LonDPP = getDPPS(lrlon, ullon, width);
+        double LatDPP = getDPPS(ullat, lrlat, height);
+
+        int depth = Math.max(getDepth(LonDPP, ROOT_LRLON, ROOT_ULLON), getDepth(LatDPP, ROOT_ULLAT, ROOT_LRLAT));
 
         int[] imageNum = numOfImages(width, height);
-        int[] startIndex = startTileSpecify(LonDPP, LonDPP, ullon, ullat);
+        int[] startIndex = startTileSpecify(LonDPP, LatDPP, ullon, ullat);
         String[][] fileNameArray = fileNames(imageIndexes(startIndex, imageNum), depth);
 
         double[] edgeLons = getTwoLon(startIndex[0], imageNum[0], LonDPP);
@@ -90,35 +92,25 @@ public class Rasterer {
     it worth noting that no valid output when depth is 0 or 1
      */
     public  int[] numOfImages(double width, double height){
-        int b1 = 4;
-        int b2 = 3;
-        while(width > b1 * PIXEL || height > b2 * PIXEL){
-            b1 *= 2;
-            b2 *= 2;
-        }
-        return new int[]{b1, b2};
+        return new int[]{1,2};
     }
 
 
 
     //initialize the fixed LonDPP of different depths of levels
-    private void initLonDPPS(){
-        for(int i = 0; i < LonDPPS.length; i += 1){
-            LonDPPS[i] = getLonDPPS(MapServer.ROOT_LRLON, MapServer.ROOT_ULLON, PIXEL * Math.pow(2, i));
-        }
-    }
+
 
     //calculate the LonDPP based on longitudes and pixels along longitude
-    private double getLonDPPS(double lowerRightLon, double upperLeftLon, double width){
+    private double getDPPS(double lowerRightLon, double upperLeftLon, double width){
         return Math.abs(lowerRightLon - upperLeftLon) / width;
     }
 
 
     //get image depth based on the LonDPP of the input
-    private int getDepth(double LonDPP){
-        for(int i = 0; i < LonDPPS.length; i += 1)
-            if(LonDPPS[i] < LonDPP)     return i;
-        return LonDPPS.length - 1;
+    private int getDepth(double DPP, double upper, double lower){
+        for(int i = 0; i <= MAXDEPTH; i += 1)
+            if(DPP > getDPPS(upper, lower, PIXEL * Math.pow(2, i)))  return i;
+        return MAXDEPTH;
     }
 
     /*
@@ -187,12 +179,11 @@ public class Rasterer {
 
 
         Rasterer rasterer = new Rasterer();
-        for(double x : rasterer.LonDPPS)
-            System.out.print(x + " ");
+
 
         int[] ratio = rasterer.numOfImages(1070, 700);
         System.out.println("\nratio of 1070 * 700 is " + ratio[0] * PIXEL + " : " + ratio[1] * PIXEL);
-        System.out.println("the depth of LonDPP = 0.00008630532 : " + rasterer.getDepth(0.00008630532));
+   ;
 
         System.out.println("3.0 / 4 = " + (3 * 1.0) / 4);
 

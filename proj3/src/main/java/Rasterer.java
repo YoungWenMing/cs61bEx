@@ -74,8 +74,8 @@ public class Rasterer {
 
         String[][] fileNameArray = fileNames(imageIndexes(startIndex, imageNum), depth);
 
-        double[] edgeLons = getTwoLon(startIndex[0], imageNum[0], LonDPP);
-        double[] edgeLats = getTwoLat(startIndex[1], imageNum[1], depth);
+        double[] edgeLons = getTwoLon(startIndex[0], endIndex[0], LonDPP);
+        double[] edgeLats = getTwoLat(startIndex[1], endIndex[1], LatDPP);
 
         results.put("render_grid", fileNameArray);
         results.put("depth", depth);
@@ -141,11 +141,11 @@ public class Rasterer {
     private int[][] imageIndexes(int[] startP, int[] endP){
         int[][] result = new int[2][];
         result[0] = new int[endP[0] - startP[0] + 1];
-        for(int i = 0; i <=result[0].length; i += 1)
+        for(int i = 0; i < result[0].length; i += 1)
             result[0][i] = startP[0] + i;
 
         result[1] = new int[endP[1] - startP[1] + 1];
-        for (int i = 0; i <= result[1].length; i +=1)
+        for (int i = 0; i < result[1].length; i +=1)
             result[1][i] = startP[1] + i;
 
         return result;
@@ -168,16 +168,15 @@ public class Rasterer {
     calculate longitudes of the two end
     every image is of PIXEL pixels, and every pixel is of LonDPP longitudes
      */
-    private double[] getTwoLon(int start, int num, double LonDPP){
-        return new double[]{LonDPP * PIXEL * start + ROOT_ULLON, LonDPP * PIXEL * (start + num) + ROOT_ULLON};
+    private double[] getTwoLon(int start, int end, double LonDPP){
+        return new double[]{LonDPP * PIXEL * start + ROOT_ULLON, LonDPP * PIXEL * end+ ROOT_ULLON};
     }
 
     /*
     calculate two latitudes in a simple way
      */
-    private double[] getTwoLat(int start, int num,int depth){
-        double interval = (ROOT_ULLAT - ROOT_LRLAT) / (256 * Math.pow(2, depth));
-        return new double[]{start * interval, (start + num) * interval};
+    private double[] getTwoLat(int start, int end,double LatDPP) {
+        return new double[]{ROOT_ULLON - start * PIXEL * LatDPP, ROOT_ULLAT - end * PIXEL * LatDPP};
     }
 
     public static void main(String[] args){

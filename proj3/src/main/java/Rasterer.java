@@ -66,8 +66,12 @@ public class Rasterer {
 
         int depth = Math.max(getDepth(LonDPP, ROOT_LRLON, ROOT_ULLON), getDepth(LatDPP, ROOT_ULLAT, ROOT_LRLAT));
 
-        int[] imageNum = numOfImages(width, height);
+
         int[] startIndex = startTileSpecify(LonDPP, LatDPP, ullon, ullat);
+        int[] endIndex = startTileSpecify(LonDPP, LatDPP, lrlon, lrlat);
+
+        int[] imageNum = numOfImages(startIndex, endIndex);
+
         String[][] fileNameArray = fileNames(imageIndexes(startIndex, imageNum), depth);
 
         double[] edgeLons = getTwoLon(startIndex[0], imageNum[0], LonDPP);
@@ -91,8 +95,8 @@ public class Rasterer {
     with ratio as 4 : 3
     it worth noting that no valid output when depth is 0 or 1
      */
-    public  int[] numOfImages(double width, double height){
-        return new int[]{1,2};
+    public  int[] numOfImages(int[] startP, int[] endP){
+        return new int[]{endP[0] - startP[0] + 1, endP[1] - startP[1] + 1};
     }
 
 
@@ -116,15 +120,15 @@ public class Rasterer {
     /*
     calculate tile number of the most northwest point
      */
-    private int[] startTileSpecify( double LonDPP, double LatDPP, double ullon, double ullat){
+    private int[] startTileSpecify(double LonDPP, double LatDPP, double ullon, double ullat){
         double x = Math.abs(ullon - ROOT_ULLON) / (PIXEL * LonDPP);
         double y = Math.abs(ullat - ROOT_ULLAT) / (PIXEL * LatDPP);
         return new int[]{(int) floor(x), (int) floor(y)};
     }
 
-    public static int[] startTileSpecify( double LonDPP, double LatDPP, double[] coordinates){
-        double x =  Math.abs(coordinates[0] - ROOT_ULLON) / (PIXEL * LonDPP);
-        double y = Math.abs(coordinates[1] - ROOT_ULLAT) / (PIXEL * LatDPP);
+    public static int[] startTileSpecify(double LonDPP, double LatDPP, double[] coordinates, double[] base){
+        double x =  Math.abs(coordinates[0] - base[0]) / (PIXEL * LonDPP);
+        double y = Math.abs(coordinates[1] - base[1]) / (PIXEL * LatDPP);
         return new int[]{(int) floor(x), (int) floor(y)};
     }
 
@@ -134,15 +138,16 @@ public class Rasterer {
     /*
     return a 2_D array contains the x indexes and y indexes of images
      */
-    private int[][] imageIndexes(int[] startP, int[] numberOfImages){
-        int[][] result = new int[numberOfImages.length][];
+    private int[][] imageIndexes(int[] startP, int[] endP){
+        int[][] result = new int[2][];
+        result[0] = new int[endP[0] - startP[0] + 1];
+        for(int i = 0; i <=result[0].length; i += 1)
+            result[0][i] = startP[0] + i;
 
-        for(int i= 0; i < startP.length; i += 1){
-            result[i] = new int[numberOfImages[i]];
-            for(int j = 0; j < result[i].length; j += 1){
-                result[i][j] = startP[i] + j;
-            }
-        }
+        result[1] = new int[endP[1] - startP[1] + 1];
+        for (int i = 0; i <= result[1].length; i +=1)
+            result[1][i] = startP[1] + i;
+
         return result;
     }
 
@@ -181,8 +186,8 @@ public class Rasterer {
         Rasterer rasterer = new Rasterer();
 
 
-        int[] ratio = rasterer.numOfImages(1070, 700);
-        System.out.println("\nratio of 1070 * 700 is " + ratio[0] * PIXEL + " : " + ratio[1] * PIXEL);
+
+
    ;
 
         System.out.println("3.0 / 4 = " + (3 * 1.0) / 4);

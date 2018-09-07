@@ -65,6 +65,7 @@ public class TestSimpleOomage {
     }
 
     /* TODO: Uncomment this test after you finish haveNiceHashCode Spread in OomageTestUtility */
+
     @Test
     public void testRandomOomagesHashCodeSpread() {
         List<Oomage> oomages = new ArrayList<>();
@@ -73,9 +74,9 @@ public class TestSimpleOomage {
         for (int i = 0; i < N; i += 1) {
             oomages.add(SimpleOomage.randomSimpleOomage());
         }
-
         assertTrue(OomageTestUtility.haveNiceHashCodeSpread(oomages, 10));
     }
+
 
     /** Calls tests for SimpleOomage. */
     public static void main(String[] args) {

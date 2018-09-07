@@ -1,0 +1,15 @@
+processing the perfectHashCode problem
+our goal is to get a hash code function that only when two Oomega object
+have exactly same red, blue and green number do they have same hash code
+
+use this function: return (red / 5)  * 52 * 52 + (green / 5) * 52 + blue / 5;
+
+now consider how to distribute the hashcode evenly to these buckets
+
+
+note that the 4th power of 256 will exceed the range of Integer and the actual value comes to 0
+so those complex Oomega with 4 zeros at the very end of their parameters will fail the TestDeadlyParams
+how to fix this problem?
+with observation on 256, we know that an integer will move to the left for 8 digits. such operation
+erases information originally stored in the low digits
+each para time 257 or 255 so that the problem will be handled.

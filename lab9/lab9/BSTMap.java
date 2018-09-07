@@ -3,6 +3,7 @@ package lab9;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Set;
 import static org.junit.Assert.*;
 
@@ -267,12 +268,23 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
      **/
     @Override
     public V remove(K key, V value) {
-        throw new UnsupportedOperationException();
+        if(remove(key) == value)     return value;
+        return null;
     }
 
     @Override
     public Iterator<K> iterator() {
-        throw new UnsupportedOperationException();
+        LinkedList<K> result = new LinkedList<>();
+        iteratorHelper(result, root);
+        return result.iterator();
+    }
+
+    private void iteratorHelper(LinkedList<K> container, Node tree){
+        if(tree != null){
+            container.add(tree.key);
+            iteratorHelper(container, tree.right);
+            iteratorHelper(container, tree.left);
+        }
     }
 
     public void printTree(){

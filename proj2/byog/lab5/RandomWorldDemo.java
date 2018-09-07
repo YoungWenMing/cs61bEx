@@ -39,7 +39,7 @@ public class RandomWorldDemo {
      */
     public static TETile randomTile() {
         int tileNum = RANDOM.nextInt(8);
-        System.out.println("this number is " + tileNum);
+        //System.out.println("this number is " + tileNum);
         switch (tileNum) {
             case 0: return Tileset.WALL;
             case 1: return Tileset.FLOWER;

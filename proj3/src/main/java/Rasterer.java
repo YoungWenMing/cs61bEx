@@ -65,7 +65,7 @@ public class Rasterer {
         int depth = getDepth(LonDPP);
 
         int[] imageNum = numOfImages(width, height);
-        int[] startIndex = startTileSpecify(LonDPP, ullon, ullat);
+        int[] startIndex = startTileSpecify(LonDPP, LonDPP, ullon, ullat);
         String[][] fileNameArray = fileNames(imageIndexes(startIndex, imageNum), depth);
 
         double[] edgeLons = getTwoLon(startIndex[0], imageNum[0], LonDPP);
@@ -124,11 +124,20 @@ public class Rasterer {
     /*
     calculate tile number of the most northwest point
      */
-    private int[] startTileSpecify( double LonDPP,double ullon, double ullat){
-        double x = LonDPP * (ullon - ROOT_ULLON) / PIXEL;
-        double y = LonDPP * (ullat - ROOT_ULLAT) / PIXEL;
+    private int[] startTileSpecify( double LonDPP, double LatDPP, double ullon, double ullat){
+        double x = Math.abs(ullon - ROOT_ULLON) / (PIXEL * LonDPP);
+        double y = Math.abs(ullat - ROOT_ULLAT) / (PIXEL * LatDPP);
         return new int[]{(int) floor(x), (int) floor(y)};
     }
+
+    public static int[] startTileSpecify( double LonDPP, double LatDPP, double[] coordinates){
+        double x =  Math.abs(coordinates[0] - ROOT_ULLON) / (PIXEL * LonDPP);
+        double y = Math.abs(coordinates[1] - ROOT_ULLAT) / (PIXEL * LatDPP);
+        return new int[]{(int) floor(x), (int) floor(y)};
+    }
+
+
+
 
     /*
     return a 2_D array contains the x indexes and y indexes of images

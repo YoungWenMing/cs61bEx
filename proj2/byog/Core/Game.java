@@ -52,28 +52,42 @@ public class Game {
             System.out.println("please input legal order starts with N and ends with S ");
             System.exit(-1);
         }
-        SEED = extractNum(input);
+        SEED = support.extractNum(input);
         RANDOM = new Random(SEED);
 
         TETile[][] finalWorldFrame = emptyWorld(HEIGHT, WIDTH);
-        spaceGrow();
-        finalWorldFrame = drawWall(finalWorldFrame);
+        //spaceGrow();
+        rectangleSpreadAndLink();
+        finalWorldFrame = drawWall(finalWorldFrame, innerPoints);
         finalWorldFrame = drawDoor(finalWorldFrame);
-        finalWorldFrame = drawRoute(finalWorldFrame);
+        finalWorldFrame = drawRoute(finalWorldFrame, innerPoints);
         return finalWorldFrame;
     }
 
-    public TETile[][] drawRoute(TETile[][] world){
+    public void drawGame(TETile[][] world){
+        ter.renderFrame(world);
+    }
 
-        for(int[] x: innerPoints){
-            world[x[0]][x[1]] = Tileset.GRASS;
+    public Game(){
+
+        innerPoints = new int[HEIGHT * WIDTH][2];
+
+        ter.initialize(WIDTH, HEIGHT);
+    }
+
+
+    public TETile[][] drawRoute(TETile[][] world, int[][] sets){
+
+        for(int i = 0; i < pointer; i +=1){
+            world[sets[i][0]][sets[i][1]] = Tileset.GRASS;
         }
         //
         return world;
     }
 
-    private TETile[][] drawWall(TETile[][] world){
-        for(int[] x: innerPoints){
+    private TETile[][] drawWall(TETile[][] world, int[][] sets){
+        for(int i = 0; i < pointer; i += 1){
+            int[] x = sets[i];
             int[][] adjacent = getAdjacent(x);
             for(int[] y: adjacent){
                 world[y[0]][y[1]] = Tileset.WALL;
@@ -105,18 +119,7 @@ public class Game {
     *
     * */
 
-    public Game(){
-        int upper =  HEIGHT * WIDTH /5;
-        int lower = HEIGHT * WIDTH /10;
-        int area = RandomUtils.uniform(RANDOM, lower, upper);
 
-        innerPoints = new int[area][2];
-
-        int[] Pos = new int[2];
-        Pos[0] = RandomUtils.uniform(RANDOM, 1, WIDTH - 1);
-        Pos[1] = RandomUtils.uniform(RANDOM, 1, HEIGHT - 1);
-        innerPoints[0] = Pos;
-    }
 
     /*
     check whether the input start with character n and end with s
@@ -150,6 +153,17 @@ public class Game {
 
     private int[] getCurrentPos(){
         return innerPoints[pointer];
+    }
+
+    /*
+    randomly pick a point on the map
+     */
+    private int[] randomPoint(int seed){
+        Random temp = new Random(seed);
+        int[] Pos = new int[2];
+        Pos[0] = RandomUtils.uniform(temp, 1, WIDTH - 1);
+        Pos[1] = RandomUtils.uniform(temp, 1, HEIGHT - 1);
+        return Pos;
     }
 
    /* private int[] newP(int[] startP, int state){
@@ -213,17 +227,6 @@ public class Game {
             return true;
         }
 
-        /*
-        for(int i = 0; i < 4; i += 1){
-            int[] goal = nextNodeSet[d];
-            if(isSuitable(goal)) {
-                addPoint(goal);
-                return true;
-            }
-            d = switchPos(d, 4);   //switch the directions to get another point
-        }
-        return false;
-        */
     }
 
     /*
@@ -254,8 +257,9 @@ public class Game {
 
 
     private void addPoint(int[] p){
-        pointer += 1;
+
         innerPoints[pointer] = p;
+        pointer += 1;
     }
 
     private void spaceGrow(){
@@ -274,25 +278,74 @@ public class Game {
     }
 
 
+    private void rectangleSpreadAndLink(){
+        int numOfR = RandomUtils.uniform(RANDOM, 8, 15);
+        int[] startP = randomPick();
+        for(int i = 0; i < numOfR; i += 1){
 
+            easyAddP(rectangleGenerate(startP));
+            int[] newP = randomPick();
+            easyAddP(support.buildWay(newP, startP));       //add passages to the set
+            startP = newP;
+        }
+    }
+
+    /*
+    generate a series of points which make a rectangle
+    */
+    public int[][] rectangleGenerate(int[] startP){
+        int area = RandomUtils.uniform(RANDOM, 4 ,HEIGHT * WIDTH / 50);
+        int lengthO = RANDOM.nextInt(area / 2) + 1;
+        int widthO = area / lengthO;
+
+        int[] direction = pickD();
+        int[][] result = new int[lengthO * widthO][2];
+
+        for(int i =0; i < lengthO; i += 1){
+            int x = startP[0] +  i * direction[0];
+            for(int j = 0; j < widthO; j += 1){
+                result[i * widthO + j][0] = x;
+                result[i * widthO + j][1] = startP[1] + j * direction[1];
+            }
+        }
+        return result;
+    }
+
+    private int[] pickD(){
+        int d = RANDOM.nextInt(4);
+        int[] re = new int[2];
+        switch (d){
+            case 0 : re = new int[]{1,1};
+            case 1 : re = new int[]{-1, 1};
+            case 2 : re = new int[]{1, -1};
+            case 3 : re = new int[]{-1, -1};
+        }
+        return re;
+
+    }
+
+    /*
+    add a set of points to the innerspace sets
+     */
+    private void easyAddP(int[][] sets){
+        for(int[] x : sets){
+            if(isSuitable(x))
+                addPoint(x);
+        }
+    }
+
+    private int[] randomPick(){
+        int[] p = new int[2];
+        p[0] = RandomUtils.uniform(RANDOM, 1, WIDTH);
+        p[1] = RandomUtils.uniform(RANDOM, 1, HEIGHT);
+        return p;
+    }
     /*
     randomly grow part
 
      */
 
-    public static int extractNum(String x){
-        String s = "";
-        for(int i = 1 ; i < x.length() - 1; i += 1){
-            s += x.charAt(i);
-        }
-        try {
-            return Integer.parseInt(s);
-        }catch (Exception e){
-            System.out.println("illegal input number ");
-            //System.exit(-1);
-            return -1;
-        }
-    }
+
 
     /*
     return an array of empty TETile set
@@ -322,9 +375,11 @@ public class Game {
         world = gameTest.drawDoor(world);
         world = gameTest.drawRoute(ter, world);
         ter.renderFrame(world);
-
         */
 
+        Game newGame = new Game();
+        TETile[][] tileWorld = newGame.playWithInputString("N10324S");
+        newGame.drawGame(tileWorld);
 
     }
 }

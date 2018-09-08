@@ -51,6 +51,16 @@ public class Rasterer {
      * "query_success" : Boolean, whether the query was able to successfully complete; don't
      *                    forget to set this to true on success! <br>
      */
+
+
+    /*
+    the logic chain of this method is:
+    1 get raw LonDPP, based on which we can get the depth by comparison with standard LonDPP
+    2 calculate proper LonDPP & LatDPP according to depth
+    3 specify the upper-left and lower-right tile, remember to ignore those part beyond the scope
+    4 generate all files' name according to two extreme position
+    5 calculate edges' longitude & latitude
+     */
     public Map<String, Object> getMapRaster(Map<String, Double> params) {
         // System.out.println(params);
         Map<String, Object> results = new HashMap<>();
@@ -60,19 +70,16 @@ public class Rasterer {
                 width = params.get("w"), height = params.get("h");
 
         double LonDPP = getDPPS(lrlon, ullon, width);
-        double LatDPP = getDPPS(ullat, lrlat, height);
 
         //int depth = Math.max(getDepth(LonDPP, ROOT_LRLON, ROOT_ULLON), getDepth(LatDPP, ROOT_ULLAT, ROOT_LRLAT));
 
         int depth = getDepth(LonDPP, ROOT_LRLON, ROOT_ULLON);
 
         LonDPP = getDPPS(ROOT_ULLON, ROOT_LRLON, PIXEL * Math.pow(2, depth));
-        LatDPP = getDPPS(ROOT_ULLAT, ROOT_LRLAT, PIXEL * Math.pow(2, depth));
-
+        double LatDPP = getDPPS(ROOT_ULLAT, ROOT_LRLAT, PIXEL * Math.pow(2, depth));
 
         int[] startIndex = TileSpecify(LonDPP, LatDPP, ullon, ullat, depth);
         int[] endIndex = TileSpecify(LonDPP, LatDPP, lrlon, lrlat, depth);
-
 
         String[][] fileNameArray = fileNames(imageIndexes(startIndex, endIndex), depth);
 
@@ -91,19 +98,6 @@ public class Rasterer {
           //                 + "your browser.");
         return results;
     }
-
-    /*consider the ratio of screen for display
-    return smallest width and height that covers the whole image
-    with ratio as 4 : 3
-    it worth noting that no valid output when depth is 0 or 1
-     */
-    public  int[] numOfImages(int[] startP, int[] endP){
-        return new int[]{endP[0] - startP[0] + 1, endP[1] - startP[1] + 1};
-    }
-
-
-
-    //initialize the fixed LonDPP of different depths of levels
 
 
     //calculate the LonDPP based on longitudes and pixels along longitude
@@ -128,9 +122,10 @@ public class Rasterer {
         return new int[]{edgeCheck(x, depth), edgeCheck(y, depth)};
     }
 
-
     /*
     ensure that all image indexes are inside the scope
+    the front end may send u some data which is beyond the whole map's scope sometime
+    so we need to abandon those part
      */
     private int edgeCheck(double x , int depth){
         if(x <= 0)
@@ -141,32 +136,16 @@ public class Rasterer {
             return (int) floor(x);
     }
 
-
-
-
-    public static int[] startTileSpecify(double LonDPP, double LatDPP, double[] coordinates, double[] base){
-        double x =  Math.abs(coordinates[0] - base[0]) / (PIXEL * LonDPP);
-        double y = Math.abs(coordinates[1] - base[1]) / (PIXEL * LatDPP);
-        return new int[]{(int) floor(x), (int) floor(y)};
-    }
-
-    /*
-    correct the two extreme positions' latitude and longitude
-    make it inside the scope that server is able to handle
-     */
-
-
-
     /*
     return a 2_D array contains the x indexes and y indexes of images
      */
     private int[][] imageIndexes(int[] startP, int[] endP){
         int[][] result = new int[2][];
-        result[0] = new int[endP[0] - startP[0] + 1];
+        result[0] = new int[endP[0] - startP[0] + 1];       //add all x values
         for(int i = 0; i < result[0].length; i += 1)
             result[0][i] = startP[0] + i;
 
-        result[1] = new int[endP[1] - startP[1] + 1];
+        result[1] = new int[endP[1] - startP[1] + 1];       // add all y vallues
         for (int i = 0; i < result[1].length; i +=1)
             result[1][i] = startP[1] + i;
 
@@ -175,6 +154,9 @@ public class Rasterer {
 
     /*
     generate names of images which comprise the whole map
+    parameter indexes is a two-D array, indexes[0] is all possible x value of necessary images
+    and indexes[1] is about y
+    every x should match all ys
      */
     private String[][] fileNames(int[][] indexes, int depth){
         String[][] files = new String[indexes[1].length][indexes[0].length];
@@ -189,6 +171,8 @@ public class Rasterer {
     /*
     calculate longitudes of the two end
     every image is of PIXEL pixels, and every pixel is of LonDPP longitudes
+    NOTE that when calculating end's longitude, we need another 1 to reach the real end of this image
+    rather than the last image's upper-left position
      */
     private double[] getTwoLon(int start, int end, double LonDPP){
         return new double[]{LonDPP * PIXEL * start + ROOT_ULLON, LonDPP * PIXEL * (end+1) + ROOT_ULLON};
@@ -201,29 +185,4 @@ public class Rasterer {
         return new double[]{ROOT_ULLAT - start * PIXEL * LatDPP, ROOT_ULLAT - (end+1) * PIXEL * LatDPP};
     }
 
-    public static void main(String[] args){
-
-
-        Rasterer rasterer = new Rasterer();
-        HashMap<String, Double> params = new HashMap<>();
-        params.put("lrlon", -122.2104604264636);
-        params.put("ullon", -122.30410170759153);
-        params.put("ullat", 37.870213571328854);
-        params.put("lrlat", 37.8318576119893);
-        params.put("w", 1085.0);
-        params.put("h", 566.0);
-
-        Map<String, Object> result = rasterer.getMapRaster(params);
-    }
-
-    public  static void printArray(int[] toDisplay){
-        for(int x : toDisplay)
-            System.out.print(x + " ");
-    }
-
-    public static void printString(String[] toDisplay){
-        System.out.println(" ");
-        for(String x : toDisplay)
-            System.out.print(x + " ");
-    }
 }

@@ -180,7 +180,7 @@ public class Rasterer {
         String[][] files = new String[indexes[1].length][indexes[0].length];
         for(int i = 0; i < indexes[1].length; i += 1){
             for(int j = 0; j < indexes[0].length; j += 1){
-                files[i][j] = "d" + depth + "_x" + indexes[0][j] + "_y" + indexes[1][i];
+                files[i][j] = "d" + depth + "_x" + indexes[0][j] + "_y" + indexes[1][i] + ".png";
             }
         }
         return files;
@@ -191,14 +191,14 @@ public class Rasterer {
     every image is of PIXEL pixels, and every pixel is of LonDPP longitudes
      */
     private double[] getTwoLon(int start, int end, double LonDPP){
-        return new double[]{LonDPP * PIXEL * start + ROOT_ULLON, LonDPP * PIXEL * end+ ROOT_ULLON};
+        return new double[]{LonDPP * PIXEL * start + ROOT_ULLON, LonDPP * PIXEL * (end+1) + ROOT_ULLON};
     }
 
     /*
     calculate two latitudes in a simple way
      */
-    private double[] getTwoLat(int start, int end,double LatDPP) {
-        return new double[]{ROOT_ULLAT - start * PIXEL * LatDPP, ROOT_ULLAT - end * PIXEL * LatDPP};
+    private double[] getTwoLat(int start, int end, double LatDPP) {
+        return new double[]{ROOT_ULLAT - start * PIXEL * LatDPP, ROOT_ULLAT - (end+1) * PIXEL * LatDPP};
     }
 
     public static void main(String[] args){

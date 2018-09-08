@@ -1,9 +1,7 @@
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.lang.Math.PI;
-import static java.lang.Math.ceil;
-import static java.lang.Math.floor;
+import static java.lang.Math.*;
 
 /**
  * This class provides all code necessary to take a query box and produce
@@ -64,15 +62,19 @@ public class Rasterer {
         double LonDPP = getDPPS(lrlon, ullon, width);
         double LatDPP = getDPPS(ullat, lrlat, height);
 
-        int depth = Math.max(getDepth(LonDPP, ROOT_LRLON, ROOT_ULLON), getDepth(LatDPP, ROOT_ULLAT, ROOT_LRLAT));
+        //int depth = Math.max(getDepth(LonDPP, ROOT_LRLON, ROOT_ULLON), getDepth(LatDPP, ROOT_ULLAT, ROOT_LRLAT));
+
+        int depth = getDepth(LonDPP, ROOT_LRLON, ROOT_ULLON);
+
+        LonDPP = getDPPS(ROOT_ULLON, ROOT_LRLON, PIXEL * Math.pow(2, depth));
+        LatDPP = getDPPS(ROOT_ULLAT, ROOT_LRLAT, PIXEL * Math.pow(2, depth));
 
 
-        int[] startIndex = startTileSpecify(LonDPP, LatDPP, ullon, ullat);
-        int[] endIndex = startTileSpecify(LonDPP, LatDPP, lrlon, lrlat);
+        int[] startIndex = TileSpecify(LonDPP, LatDPP, ullon, ullat, depth);
+        int[] endIndex = TileSpecify(LonDPP, LatDPP, lrlon, lrlat, depth);
 
-        int[] imageNum = numOfImages(startIndex, endIndex);
 
-        String[][] fileNameArray = fileNames(imageIndexes(startIndex, imageNum), depth);
+        String[][] fileNameArray = fileNames(imageIndexes(startIndex, endIndex), depth);
 
         double[] edgeLons = getTwoLon(startIndex[0], endIndex[0], LonDPP);
         double[] edgeLats = getTwoLat(startIndex[1], endIndex[1], LatDPP);
@@ -120,11 +122,27 @@ public class Rasterer {
     /*
     calculate tile number of the most northwest point
      */
-    private int[] startTileSpecify(double LonDPP, double LatDPP, double ullon, double ullat){
-        double x = Math.abs(ullon - ROOT_ULLON) / (PIXEL * LonDPP);
-        double y = Math.abs(ullat - ROOT_ULLAT) / (PIXEL * LatDPP);
-        return new int[]{(int) floor(x), (int) floor(y)};
+    private int[] TileSpecify(double LonDPP, double LatDPP, double ullon, double ullat, int depth){
+        double x = (ullon - ROOT_ULLON) / (PIXEL * LonDPP);
+        double y = (ROOT_ULLAT - ullat) / (PIXEL * LatDPP);
+        return new int[]{edgeCheck(x, depth), edgeCheck(y, depth)};
     }
+
+
+    /*
+    ensure that all image indexes are inside the scope
+     */
+    private int edgeCheck(double x , int depth){
+        if(x <= 0)
+            return 0;
+        else if(x >= pow(2, depth))
+            return (int) pow(2, depth) - 1;
+        else
+            return (int) floor(x);
+    }
+
+
+
 
     public static int[] startTileSpecify(double LonDPP, double LatDPP, double[] coordinates, double[] base){
         double x =  Math.abs(coordinates[0] - base[0]) / (PIXEL * LonDPP);
@@ -132,6 +150,10 @@ public class Rasterer {
         return new int[]{(int) floor(x), (int) floor(y)};
     }
 
+    /*
+    correct the two extreme positions' latitude and longitude
+    make it inside the scope that server is able to handle
+     */
 
 
 
@@ -176,27 +198,22 @@ public class Rasterer {
     calculate two latitudes in a simple way
      */
     private double[] getTwoLat(int start, int end,double LatDPP) {
-        return new double[]{ROOT_ULLON - start * PIXEL * LatDPP, ROOT_ULLAT - end * PIXEL * LatDPP};
+        return new double[]{ROOT_ULLAT - start * PIXEL * LatDPP, ROOT_ULLAT - end * PIXEL * LatDPP};
     }
 
     public static void main(String[] args){
 
 
         Rasterer rasterer = new Rasterer();
+        HashMap<String, Double> params = new HashMap<>();
+        params.put("lrlon", -122.2104604264636);
+        params.put("ullon", -122.30410170759153);
+        params.put("ullat", 37.870213571328854);
+        params.put("lrlat", 37.8318576119893);
+        params.put("w", 1085.0);
+        params.put("h", 566.0);
 
-
-
-
-   ;
-
-        System.out.println("3.0 / 4 = " + (3 * 1.0) / 4);
-
-        int[][] XYsets = rasterer.imageIndexes(new int[]{0,0}, new int[]{4, 3});
-        String[][] filenames = rasterer.fileNames(XYsets, 3);
-        printArray(XYsets[0]);
-        printArray(XYsets[1]);
-        for(String[] x : filenames)
-            printString(x);
+        Map<String, Object> result = rasterer.getMapRaster(params);
     }
 
     public  static void printArray(int[] toDisplay){

@@ -6,7 +6,7 @@ import java.io.IOException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import java.util.ArrayList;
+import java.util.*;
 
 /**
  * Graph for storing all of the intersection (vertex) and road (edge) information.
@@ -20,6 +20,22 @@ import java.util.ArrayList;
 public class GraphDB {
     /** Your instance variables for storing the graph. You should consider
      * creating helper classes, e.g. Node, Edge, etc. */
+
+    //private
+    private final Map<Long, vertex> verteces =  new LinkedHashMap<>();
+    private final Map<Long, edge>   edges   =   new LinkedHashMap<>();
+
+
+    /**
+     * interface for verteces to add new vertex
+     */
+    void addVertex(vertex vx){
+        verteces.put(vx.id, vx);
+    }
+
+    void addWay(edge eg){
+        edges.put(eg.id, eg);
+    }
 
     /**
      * Example constructor shows how to create and start an XML parser.
@@ -66,7 +82,8 @@ public class GraphDB {
      */
     Iterable<Long> vertices() {
         //YOUR CODE HERE, this currently returns only an empty list.
-        return new ArrayList<Long>();
+        return verteces.keySet();
+        //return new ArrayList<Long>();
     }
 
     /**
@@ -75,7 +92,7 @@ public class GraphDB {
      * @return An iterable of the ids of the neighbors of v.
      */
     Iterable<Long> adjacent(long v) {
-        return null;
+        return verteces.get(v).neighbors;
     }
 
     /**
@@ -145,7 +162,7 @@ public class GraphDB {
      * @return The longitude of the vertex.
      */
     double lon(long v) {
-        return 0;
+        return verteces.get(v).lon;
     }
 
     /**
@@ -154,6 +171,60 @@ public class GraphDB {
      * @return The latitude of the vertex.
      */
     double lat(long v) {
-        return 0;
+        return verteces.get(v).lat;
     }
+
+    /**
+     * a class representing concrete node in a map
+     */
+    static class vertex{
+        long id;
+        double lon;
+        double lat;
+        Map<String, String> attributes;
+        Set<Long>           neighbors;
+
+        vertex(long id, double lon, double lat){
+            this.id = id;
+            this.lon = lon;
+            this.lat = lat;
+            attributes = new HashMap<>();
+            neighbors = new HashSet<>();
+        }
+    }
+
+    /**
+     * a class representing a way in a map
+     * it has ref contains all node on this way
+     * attributes has its name and other features
+     */
+    static class edge{
+        long id;
+        Set<Long> ref;
+        Map<String, String> attributes;
+
+        edge(long id){
+            this.id = id;
+            ref = new HashSet<>();
+            attributes = new HashMap<>();
+        }
+
+    }
+
+    public static void main(String[] args){
+
+    }
+
+
+    /*
+    note: those nodes on a same way are neighbors to its adjacent nodes
+            sometimes a way is not valid because of it has a "building" tag
+            so we need to ignore the node on it.    2018/9/19 10:00
+
+        complete two classes and relative methods
+        figure out that in handler, activeState indicate the current state----
+        whether we are dealing with a node or a way
+        extra information can be identified via "tag" keyword
+                                                    2018/9/19 22:56
+     */
 }

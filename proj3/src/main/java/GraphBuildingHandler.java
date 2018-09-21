@@ -2,9 +2,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  *  Parses OSM XML files using an XML SAX parser. Used to construct the graph of roads for
@@ -102,7 +100,8 @@ public class GraphBuildingHandler extends DefaultHandler {
             cumbersome since you might have to remove the connections if you later see a tag that
             makes this way invalid. Instead, think of keeping a list of possible connections and
             remember whether this way is valid or not. */
-            currentE.addRef(Long.parseLong(attributes.getValue("id")));
+
+            currentE.addRef(Long.parseLong(attributes.getValue("ref")));
 
 
         } else if (activeState.equals("way") && qName.equals("tag")) {
@@ -156,10 +155,17 @@ public class GraphBuildingHandler extends DefaultHandler {
             /* Hint1: If you have stored the possible connections for this way, here's your
             chance to actually connect the nodes together if the way is valid. */
 //            System.out.println("Finishing a way...");
+            /*adjacent nodes along a way are neighbors of each other
+             */
             String buildingInfo = currentE.extraInfo.get("building");
-            if(!buildingInfo.equals("yes")) {
-                for (int i = 1; i < currentE.ref.size(); i += 1) {
-                    //g.getVertex(currentE.ref.)
+            if(buildingInfo == null || !buildingInfo.equals("yes")) {
+                Iterator<Long> ref = currentE.ref.iterator();
+                long last = ref.next();
+                while(ref.hasNext()) {
+                    long current = ref.next();
+                    g.getVertex(last).addNeighbors(current);
+                    g.getVertex(current).addNeighbors(last);
+                    last = current;
                 }
             }
         }

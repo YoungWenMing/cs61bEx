@@ -1,5 +1,7 @@
-import java.util.List;
-import java.util.Objects;
+import edu.princeton.cs.algs4.Graph;
+import edu.princeton.cs.algs4.IndexMinPQ;
+
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,7 +27,75 @@ public class Router {
      */
     public static List<Long> shortestPath(GraphDB g, double stlon, double stlat,
                                           double destlon, double destlat) {
-        return null; // FIXME
+        //return null; // FIXME
+        GraphDB.vertex startP = g.getVertex(g.closest(stlon, stlat));
+        GraphDB.vertex endP = g.getVertex(g.closest(destlon, destlat));
+
+        PriorityQueue<GraphDB.vertex> pq = new PriorityQueue<>(100, new VertexComparator());
+        HashMap<Long, Double>   distTo = new HashMap<>();
+        HashMap<Long, Long>     edgeTo = new HashMap<>();
+
+        //initiation
+        distTo.put(startP.id, 0.0);
+        startP.distToX = g.distance(startP.id, endP.id);
+
+        ArrayList<Long> route = new ArrayList<>();
+        GraphDB.vertex last = startP;
+        //HashSet<Long> pqSet = new HashSet<>();
+
+        pq.add(startP);         //maintain a set to check whether a node is in the queue
+        //pqSet.add(startP.id);
+
+        while (!pq.isEmpty()){
+            GraphDB.vertex here = pq.poll();
+            edgeTo.put(last.id, here.id);
+            distTo.put(here.id, g.distance(last.id, here.id) + distTo.get(last.id));
+            route.add(here.id);
+
+            if(here.id == endP.id)      return route;               //reach the destination
+
+
+            for(long v : here.neighbors){
+
+                if(distTo.containsKey(v))                           //reach a passed node again, note that distance to this v from here must be longer than the former route
+                    continue;                                       //otherwise, we would not choose v before
+                GraphDB.vertex Vx = g.getVertex(v);
+                double newD = distTo.get(here.id) + g.distance(here.id, v) + g.distance(v, endP.id);
+                if(pq.contains(Vx) && Vx.distToX > newD)    pq.remove(Vx);
+                Vx.distToX = newD;
+                pq.add(Vx);
+            }
+            last = here;
+        }
+        return route;
+
+    }
+
+    /*
+    static class vertexD{
+        long id;
+        double distance;
+
+        public vertexD(long id, double distance){
+            this.id = id;
+            this.distance = distance;
+        }
+
+        public void changeD(double x){
+            this.distance = x;
+        }
+    }*/
+
+    static class VertexComparator implements Comparator{
+        @Override
+        public int compare(Object arg0, Object arg1){
+            double d = ((GraphDB.vertex) arg0).distToX - ((GraphDB.vertex) arg1).distToX;
+            if(d > 0)     return 1;
+            else if(d < 0)  return -1;
+            else            return 0;
+        }
+
+        public  VertexComparator(){}
     }
 
     /**

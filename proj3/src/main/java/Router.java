@@ -37,38 +37,41 @@ public class Router {
 
         //initiation
         distTo.put(startP.id, 0.0);
+        edgeTo.put(startP.id, null);
         startP.distToX = g.distance(startP.id, endP.id);
-
-        ArrayList<Long> route = new ArrayList<>();
-        GraphDB.vertex last = startP;
-        //HashSet<Long> pqSet = new HashSet<>();
-
         pq.add(startP);         //maintain a set to check whether a node is in the queue
-        //pqSet.add(startP.id);
 
         while (!pq.isEmpty()){
             GraphDB.vertex here = pq.poll();
-            edgeTo.put(last.id, here.id);
-            distTo.put(here.id, g.distance(last.id, here.id) + distTo.get(last.id));
-            route.add(here.id);
-
-            if(here.id == endP.id)      return route;               //reach the destination
+            if(here.id == endP.id){
+                return findRoute(startP.id, endP.id, edgeTo);               //reach the destination
+            }
 
 
             for(long v : here.neighbors){
 
-                if(distTo.containsKey(v))                           //reach a passed node again, note that distance to this v from here must be longer than the former route
-                    continue;                                       //otherwise, we would not choose v before
+                /*step 1: get the vertex object of here's neighbor*/
                 GraphDB.vertex Vx = g.getVertex(v);
-                double newD = distTo.get(here.id) + g.distance(here.id, v) + g.distance(v, endP.id);
-                if(pq.contains(Vx) && Vx.distToX > newD)    pq.remove(Vx);
-                Vx.distToX = newD;
-                pq.add(Vx);
-            }
-            last = here;
-        }
-        return route;
 
+                /* calculate its g(v) + h(v)*/
+                double distanceYet = distTo.get(here.id) + g.distance(here.id, v);
+                double newD = distanceYet + g.distance(v, endP.id);
+
+                /*update distToX field if necessary. Only when a shorter path to this node be found, the vertex's distToX should be modified.
+                * note that after a node is removed from the queue, no shorter path to it will be found. so, the vertex is absolutely in the queue when we enter this "if"*/
+                if(Vx.distToX > newD) {
+                    /*step 2: update the edgeTo array */
+                    edgeTo.put(v, here.id);
+                    distTo.put(v, distanceYet);
+                    Vx.distToX = newD;
+                    /*refactor the priority queue if Vx is in it*/
+                    pq.remove(Vx);          //if a node is excluded from the queue, there would never be a new shorter path to it
+                    pq.add(Vx);
+                }
+                if(here.id == endP.id)      return findRoute(startP.id, endP.id, edgeTo);
+            }
+        }
+        return null;
     }
 
     /*
@@ -85,6 +88,20 @@ public class Router {
             this.distance = x;
         }
     }*/
+    private static List<Long> findRoute(long startId, long endId, HashMap<Long, Long> edgeTo){
+        Stack<Long> route = new Stack<>();
+        while(edgeTo.get(endId) != null){
+            long x = edgeTo.get(endId);
+            route.add(endId);
+            endId = x;
+        }
+        ArrayList<Long> realRoute = new ArrayList<>();
+        realRoute.add(startId);
+        while (!route.empty())      realRoute.add(route.pop());
+        return realRoute;
+    }
+
+
 
     static class VertexComparator implements Comparator{
         @Override
@@ -95,7 +112,7 @@ public class Router {
             else            return 0;
         }
 
-        public  VertexComparator(){}
+        VertexComparator(){}
     }
 
     /**

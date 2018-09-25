@@ -1,20 +1,21 @@
 package hw4.puzzle;
 
+import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.MinPQ;
 
-import java.util.HashSet;
+import java.util.*;
 
 public class Solver {
 
     private MinPQ<searchNode> pq;
-    private int moves;
-    private HashSet<WorldState> solution;
-    private HashSet<String> walked;
+    private ArrayList<WorldState> solution;
+    private HashMap<WorldState, searchNode>     solutionPath;
+    private HashMap<WorldState, searchNode>     nodeDict;
 
-    private class searchNode implements Comparable<searchNode>{
-        private WorldState currentState;
-        private int movesMade;
-        private searchNode prevNode;
+    static class searchNode {
+        WorldState currentState;
+        int movesMade;
+        searchNode prevNode;
 
 
         public searchNode(WorldState state, int movesMade, searchNode prevNode){
@@ -23,64 +24,78 @@ public class Solver {
             this.prevNode = prevNode;
         }
 
-        public int compareTo(searchNode s){
-            int x = currentState.estimatedDistanceToGoal();
-            int y = s.currentState.estimatedDistanceToGoal();
-            int result = x + movesMade - y - s.movesMade;
-            if(result == 0)
-                return x - y;
-            return result;
-        }
     }
 
-    public Solver(){
-        moves = 0;
-        pq = new MinPQ<>();
-        solution = new HashSet<>();
-        walked = new HashSet<>();
+
+    static class nodeComparator implements Comparator {
+        @Override
+        public int compare(Object nodeA, Object nodeB){
+            int totalDistA = ((searchNode) nodeA).currentState.estimatedDistanceToGoal() + ((searchNode) nodeA).movesMade;
+            int totalDistB = ((searchNode) nodeB).currentState.estimatedDistanceToGoal() + ((searchNode) nodeB).movesMade;
+
+            return Integer.compare(totalDistA, totalDistB);
+        }
+
+        public nodeComparator(){}
+
+    }
+
+    private Solver(){
+        pq = new MinPQ<>(new nodeComparator());
+        solution = new ArrayList<>();
+        solutionPath = new HashMap<>();
+        nodeDict = new HashMap<>();
     }
 
     public Solver(WorldState initial){
         this();
-        searchNode start = new searchNode(initial, moves(), null);
+        searchNode start = new searchNode(initial, 0, null);
+        nodeDict.put(initial, start);
         pq.insert(start);
         solverHelper();
 
     }
 
-    public void solverHelper(){
-        searchNode toCheck = pq.delMin();
-        pq = new MinPQ<>();
+    private void solverHelper(){
+        searchNode tocheck;
+        while(!pq.isEmpty()){
+            tocheck = pq.delMin();
+            if(solutionPath.containsKey(tocheck.currentState))    continue;       //since the minPQ has no interface to fix inner nodes' priority, some WorldStates may be added to
+                                                                                //this queue twice or more. remember that once we throw a node from the queue, there is no shorter path to
+                                                                                //get this node given that no negatively-weighted edge exists.
+            solutionPath.put(tocheck.currentState, tocheck);
+            if(tocheck.currentState.isGoal())       getShortestPath(tocheck);
 
-        if(toCheck == null){
-            System.out.print("no such solution for this puzzle\n");
-            return;
-        }
-
-        WorldState current = toCheck.currentState;
-        System.out.println(toCheck.currentState);
-        solution.add(toCheck.currentState);
-        walked.add(current.toString());
-        moves += 1;
-
-        if(toCheck.currentState.estimatedDistanceToGoal() != 0) {
-            for(WorldState x: toCheck.currentState.neighbors()) {
-                if(toCheck.prevNode == null)
-                    pq.insert(new searchNode(x, moves(), toCheck));
-                else {
-                    if(!x.equals(toCheck.prevNode.currentState))
-                        //&& !walked.contains(x.toString())
-                        //System.out.println(x);
-                        pq.insert(new searchNode(x, moves(), toCheck));
+            int movesYet = tocheck.movesMade;
+            for(WorldState state : tocheck.currentState.neighbors()){
+                if(!nodeDict.containsKey(state)|| nodeDict.get(state).movesMade > movesYet + 1) {
+                    searchNode x = new searchNode(state, movesYet + 1, tocheck);
+                    nodeDict.put(state,x);
+                    pq.insert(x);
                 }
             }
-            solverHelper();
         }
     }
 
+
+    /**
+     *get the shortest path from all touched states
+     * @return
+     */
+    private void getShortestPath(searchNode goal){
+        Stack<WorldState>   temp = new Stack<>();
+        while(goal != null){
+            searchNode x = goal.prevNode;
+            temp.add(goal.currentState);
+            goal = x;
+        }
+        while(!temp.empty())        solution.add(temp.pop());
+    }
+
+
     public int moves(){
 
-        return moves;
+        return solution.size() - 1;
     }
 
     public Iterable<WorldState> solution(){

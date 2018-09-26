@@ -124,9 +124,76 @@ public class Router {
      * route.
      */
     public static List<NavigationDirection> routeDirections(GraphDB g, List<Long> route) {
-        return null; // FIXME
+        //return null; // FIXME
+        ArrayList<NavigationDirection> navi = new ArrayList<>();
+        Iterator<Long> routeIter = route.iterator();
+        long startP = routeIter.next(), secondP = routeIter.next();
+        double bearingInit = g.bearing(startP, secondP);
+        double distance =g.distance(startP, secondP);
+        int direction = 0;
+        long wayId = getWayId(startP, secondP, g);
+
+        while(routeIter.hasNext()){
+            long thirdP = routeIter.next();
+            double tempBearing = g.bearing(secondP, thirdP);
+            int tempDirection = getDirection(tempBearing - bearingInit);
+            long tempWayId = getWayId(startP, secondP, g);
+            if(wayId != tempWayId){
+                navi.add(generateNavi(direction, getWayName(tempWayId, g), distance));            //when we need to take a turn, we finish the last
+                direction = tempDirection;                                                      //path and add the navigation information to list
+                distance  = 0;
+                wayId = tempWayId;
+            }
+            distance += g.distance(secondP, thirdP);
+            startP = secondP;
+            secondP = thirdP;
+            bearingInit = tempBearing;
+        }
+        /*get destination, accomplish integral route*/
+        navi.add(generateNavi(direction, getWayName(secondP, g), distance));
+
+        return navi;
     }
 
+
+    //get the initial way, a little complicated in case that the start point is at an
+    static long getWayId(long v1, long v2, GraphDB g){
+        ArrayList<Long> roadList1 = g.getVertex(v1).roadIdList;
+        ArrayList<Long> roadList2 = g.getVertex(v2).roadIdList;
+        for(long x : roadList1){
+            if (roadList2.contains(x))      return x;
+        }
+        return -1;
+    }
+
+    //from id of a node to get its road's name, if no name return "unnamed road"
+    private static String getWayName(long id, GraphDB g){
+        GraphDB.edge way = g.getEdge(id);           //get vertex object first, and then the road number
+        return (way == null || !way.extraInfo.containsKey("name"))? NavigationDirection.UNKNOWN_ROAD: way.extraInfo.get("name");
+    }
+
+    //identify direction according to relative bearing
+    private static int getDirection(double relativeBearing){
+        double bearingAbs = Math.abs(relativeBearing);
+        if(bearingAbs <= 15)
+            return 1;
+        if(bearingAbs <= 30)
+            return relativeBearing < 0? 2:3;
+        else if(bearingAbs <= 100)
+            return relativeBearing < 0? 4:5;
+        else
+            return relativeBearing < 0? 6:7;
+    }
+
+
+    /*generate navigation element*/
+    static NavigationDirection generateNavi(int direction, String way, double distance){
+        NavigationDirection X = new NavigationDirection();
+        X.direction = direction;
+        X.way       = way;
+        X.distance  = distance;
+        return X;
+    }
 
     /**
      * Class to represent a navigation direction, which consists of 3 attributes:

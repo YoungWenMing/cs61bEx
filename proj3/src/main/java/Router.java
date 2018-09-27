@@ -131,26 +131,33 @@ public class Router {
         double bearingInit = g.bearing(startP, secondP);
         double distance =g.distance(startP, secondP);
         int direction = 0;
-        long wayId = getWayId(startP, secondP, g);
+        String wayName = getWayName(getWayId(startP, secondP, g), g);
 
         while(routeIter.hasNext()){
             long thirdP = routeIter.next();
             double tempBearing = g.bearing(secondP, thirdP);
             int tempDirection = getDirection(tempBearing - bearingInit);
-            long tempWayId = getWayId(startP, secondP, g);
+
+            String tempWayName = getWayName(getWayId(secondP, thirdP,g), g);
+            /*
             if(wayId != tempWayId){
                 navi.add(generateNavi(direction, getWayName(tempWayId, g), distance));            //when we need to take a turn, we finish the last
                 direction = tempDirection;                                                      //path and add the navigation information to list
                 distance  = 0;
                 wayId = tempWayId;
+            }*/
+            if(!wayName.equals(tempWayName)){
+                navi.add(generateNavi(direction, wayName, distance));
+                direction = tempDirection;
+                distance = 0;
+                wayName = tempWayName;
             }
             distance += g.distance(secondP, thirdP);
-            startP = secondP;
             secondP = thirdP;
             bearingInit = tempBearing;
         }
         /*get destination, accomplish integral route*/
-        navi.add(generateNavi(direction, getWayName(secondP, g), distance));
+        navi.add(generateNavi(direction, wayName, distance));
 
         return navi;
     }
@@ -169,21 +176,27 @@ public class Router {
     //from id of a node to get its road's name, if no name return "unnamed road"
     private static String getWayName(long id, GraphDB g){
         GraphDB.edge way = g.getEdge(id);           //get vertex object first, and then the road number
-        return (way == null || !way.extraInfo.containsKey("name"))? NavigationDirection.UNKNOWN_ROAD: way.extraInfo.get("name");
+        return (way == null || !way.extraInfo.containsKey("name"))? "": way.extraInfo.get("name");
     }
 
     //identify direction according to relative bearing
     private static int getDirection(double relativeBearing){
         double bearingAbs = Math.abs(relativeBearing);
+        if(bearingAbs > 180){                   //when absolute value of relative bearing exceed 180, take the supplementary angle
+            bearingAbs = 360 - bearingAbs;
+            relativeBearing = -1 * relativeBearing;
+        }
         if(bearingAbs <= 15)
             return 1;
         if(bearingAbs <= 30)
             return relativeBearing < 0? 2:3;
         else if(bearingAbs <= 100)
-            return relativeBearing < 0? 4:5;
+            return relativeBearing > 0? 4:5;
         else
             return relativeBearing < 0? 6:7;
     }
+
+
 
 
     /*generate navigation element*/

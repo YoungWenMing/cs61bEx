@@ -1,6 +1,7 @@
 package hw4.puzzle;
 
 import edu.princeton.cs.algs4.Queue;
+import static org.junit.Assert.*;
 
 
 public class Board implements WorldState{
@@ -22,7 +23,7 @@ public class Board implements WorldState{
 
     public int tileAt(int i, int j){
         if((i < 0 || i >= N) || (j < 0 || j >= N))
-            throw new IndexOutOfBoundsException("i & j must both be between 0 and N - 1");
+            throw new IndexOutOfBoundsException("i & j must be both between 0 and N - 1");
         return board[i][j];
     }
 
@@ -95,22 +96,42 @@ public class Board implements WorldState{
     /*based on the value to calculate its position to which it belongs properly
     * */
     private int[] properPos(int value){
+        if(value == BLANK)      return new int[]{N -1, N - 1};
         int rowNum = (value + 1) / N;
         int colNum = (value + 1) % N;
         return new int[]{rowNum, colNum};
     }
 
     public int estimatedDistanceToGoal(){
-        return 0;
+        return manhattan();
     }
 
 
     public boolean equals(Object y){
+        if(!y.getClass().equals(this))  return false;
+        Board yBoard = (Board) y;
+        if(yBoard.size() != N)      return false;
+        for(int i =0; i< N; i += 1){
+            for(int j =0; j < N; j += 1){
+                if(board[i][j] != yBoard.tileAt(i, j))
+                    return false;
+            }
+        }
         return true;
     }
 
     public String toString(){
-        return "";
+        String str = "";
+        for(int i =0; i< N; i += 1){
+            for(int j =0; j < N; j += 1){
+                if(board[i][j] != BLANK)
+                    str = str + " " + board[i][j] + " ";
+                else
+                    str += "   ";
+            }
+            str += "\n";
+        }
+        return str;
     }
 
 
@@ -133,6 +154,14 @@ public class Board implements WorldState{
     */
 
     public static void main(String[] args){
+        int[] a = new int[]{8 , 1, 3};
+        int[] b = new int[]{4, 0, 2};
+        int[] c = new int[]{7, 6, 5};
+        int[][] testBoard = new int[][]{a, b, c};
+        Board boardA = new Board(testBoard);
 
+        assert boardA.hamming() == 5;
+        assertEquals("the manhattan distance should be 10 \n", boardA.manhattan(), 10);
+        System.out.print(boardA);
     }
 }
